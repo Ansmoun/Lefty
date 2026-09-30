@@ -1,0 +1,34 @@
+#!/bin/sh
+cd "$(dirname "$0")"
+LEFTY="$(pwd)"
+
+if [ "$LEFTY" = "/opt/lefty" ] && [ -d "/opt/lanetk/src/lib" ]; then
+    TK="/opt/lanetk"
+else
+    TK="${LANETK_DIR:-$HOME/proyectos/lanetk}"
+fi
+
+export LUA_PATH="$LEFTY/src/?.lua;$LEFTY/src/?/init.lua;$TK/?.lua;$TK/src/?.lua;$TK/src/?/init.lua;;"
+
+# Cerrar todos los fds > 2 antes del exec a luajit.
+#
+# Greetd deja el socket de su session-worker abierto al invocar el
+# wrapper. Ese socket se hereda al shell del wrapper, al shell de
+# run, y a luajit. Si luajit no lo cierra, greetd no puede terminar
+# el worker al autenticar, y queda en deadlock.
+#
+# El cierre se hace en un shell interior (sh -c) para no cerrar el
+# fd del propio script de run mientras sh lo esta leyendo. El shell
+# interior recibe el script en -c, no lo lee de un fd, asi que
+# puede cerrarlos todos sin problema.
+exec sh -c '
+    for f in /proc/self/fd/*; do
+        n="${f##*/}"
+        case "$n" in
+            0|1|2) continue ;;
+        esac
+        eval "exec $n<&-" 2>/dev/null || true
+        eval "exec $n>&-" 2>/dev/null || true
+    done
+    exec luajit "$@"
+' sh "$@"

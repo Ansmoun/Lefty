@@ -1,0 +1,10 @@
+# Backups y temporales
+*.bak
+*.bak.*
+*.orig
+*.swp
+*.tmp
+.DS_Store
+
+# Archivos del sistema de backups locales
+.stable-tag
