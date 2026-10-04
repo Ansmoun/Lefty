@@ -102,6 +102,22 @@ local function on_greetd_msg(kind, data)
                 return
             end
             log.info("greeter", "start_session: %s", table.concat(cmd, " "))
+
+            -- Persistir la eleccion del WM en /tmp/lanetk-wm-choice.
+            -- No escribimos directo a ~/.config/lanetk/wm porque
+            -- greeter no tiene permiso de escritura en el home del
+            -- usuario real. bin/lanetk-session lee este archivo
+            -- temporal y lo persiste al home del usuario una vez
+            -- arrancada la sesion.
+            local wm_path = "/tmp/lanetk-wm-choice"
+            local wf = io.open(wm_path, "w")
+            if wf then
+                wf:write(sess.id .. "\n")
+                wf:close()
+                log.info("greeter", "WM guardado en %s: %s", wm_path, sess.id)
+            else
+                log.warn("greeter", "no pude escribir %s", wm_path)
+            end
             -- start_session no espera respuesta. greetd va a matar
             -- al wrapper y lanzar la sesion del usuario. Salir con
             -- os.exit(0) directo es lo correcto: el proceso muere,

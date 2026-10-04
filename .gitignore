@@ -8,3 +8,4 @@
 
 # Archivos del sistema de backups locales
 .stable-tag
+*.bak-*
